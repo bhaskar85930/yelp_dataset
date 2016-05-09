@@ -2,7 +2,7 @@ We can work on the given dataset in 4 approaches.
 I have choosen HIVE to work on the given yelp_dataset.
 
 
-Approach 1:
+Approach 1
 -----------
 Extracts json object from a json string based on json path specified, and returns json string of the extracted json object. 
 It will return null if the input json string is invalid. NOTE: The json path can only have the characters [0-9a-z_], 
