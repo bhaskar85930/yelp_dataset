@@ -1,0 +1,67 @@
+hive> select * from yelp_dataset;
+OK
+rLtl8ZkDX5vH5nAx9C3q5Q	fWKvX83p0-ka4JS3dc6E5A	5	2011-01-26	My wife took me here on my birthday for breakfast and it was excellent.  The weather was perfect which made sitting outside overlooking their grounds an absolute pleasure.	172	review	9yKzy9PApeiPPOUJEtnvkg	05	2
+pLtl8ZkDX5vH5nAx9C3q5Q	pWKvX83p0-ka4JS3dc6E5A	5	2012-01-26	My wife took me here on my birthday for breakfast and it was excellent.  The weather was perfect which made sitting outside overlooking their grounds an absolute pleasure.My wife took me here on my birthday for breakfast and it was excellent.	243	review	29yKzy9PApeiPPOUJEtnvkg	1	5	2
+iLtl8ZkDX5vH5nAx9C3q5Q	iWKvX83p0-ka4JS3dc6E5A	5	2013-01-26	My wife took me here on my birthday for breakfast and it was excellent.  The weather was perfect which made sitting outside overlooking their grounds an absolute pleasure.My wife took me here on my birthday for breakfast and it was excellent.birthday for breakfast and it was excellent  The weather was perfect which	317	review	39yKzy9PApeiPPOUJEtnvkg00	0
+aLtl8ZkDX5vH5nAx9C3q5Q	aWKvX83p0-ka4JS3dc6E5A	5	2018-01-26	My wife took me here on my birthday for breakfast and it was excellent.  The weather was perfect which made sitting outside overlooking their grounds an absolute pleasure.My wife took me here on my birthday for breakfast and it was excellent.birthday for breakfast and it was excellent  The weather was perfect which The weather was perfect which The weather was perfect which The weather was perfect which The weather was perfect which	437	review	49yKzy9PApeiPPOUJEtnvkg	0	3	0
+bLtl8ZkDX5vH5nAx9C3q5Q	bWKvX83p0-ka4JS3dc6E5A	5	2001-01-26	My wife took me here on my birthday for breakfast and it was excellent.  The weather was perfect which made sitting outside overlooking their grounds an absolute pleasure.My wife took me here on my birthday for breakfast and it was excellent.birthday for breakfast and it was excellent  The weather was perfect which The weather was perfect which	347	review	59yKzy9PApeiPPOUJEtnvkg	0	0	5
+cLtl8ZkDX5vH5nAx9C3q5Q	cWKvX83p0-ka4JS3dc6E5A	5	2003-01-26	My wife took me here on my birthday for breakfast and it was excellent.  The weather was perfect which made sitting outside overlooking their grounds an absolute pleasure.My wife took me here on my birthday for breakfast and it was excellent.birthday for breakfast and it was excellent  The weather was perfect which The weather was perfect which The weather was perfect which	377	review	69yKzy9PApeiPPOUJEtnvkg	7	1	0
+dLtl8ZkDX5vH5nAx9C3q5Q	dWKvX83p0-ka4JS3dc6E5A	5	2003-01-26	My wife took me here on my birthday for breakfast and it was excellent.  The weather was perfect which made sitting outside overlooking their grounds an absolute pleasure.My wife took me here on my birthday for breakfast and it was excellent.birthday for breakfast and it was excellent  The weather was perfect which The weather was perfect which The weather was perfect which My wife took me here on my birthday	413	review	79yKzy9PApeiPPOUJEtnvkg	8	2	0
+eLtl8ZkDX5vH5nAx9C3q5Q	eWKvX83p0-ka4JS3dc6E5A	5	2009-01-26	My wife took me here on my birthday for breakfast and it was excellent.  The weather was perfect which made sitting outside overlooking their grounds an absolute pleasure.My wife took me here on my birthday for breakfast and it was excellent.birthday for breakfast and it was excellent  The weather was perfect which The weather was perfect which The weather was perfect which My wife took me here on my birthday My wife took me here on my birthday	449	review	79yKzy9PApeiPPOUJEtnvkg	9	15
+fLtl8ZkDX5vH5nAx9C3q5Q	fWKvX83p0-ka4JS3dc6E5A	5	2007-01-26	My wife took me here on my birthday for breakfast and it was excellent.  The weather was perfect which made sitting outside overlooking their grounds an absolute pleasure.My wife took me here on my birthday for breakfast and it was excellent.birthday for breakfast and it was excellent  The weather was perfect which The weather was perfect which The weather was perfect which My wife took me here on my birthday My wife took me here on my birthday My wife took me here on my birthday	485	review	89yKzy9PApeiPPOUJEtnvkg	5	1	2
+gLtl8ZkDX5vH5nAx9C3q5Q	gWKvX83p0-ka4JS3dc6E5A	5	2002-01-26	My wife took me here on my birthday for breakfast and it was excellent.  The weather was perfect which made sitting outside overlooking their grounds an absolute pleasure.My wife took me here on my birthday for breakfast and it was excellent.birthday for breakfast and it was excellent  The weather was perfect which The weather was perfect which The weather was perfect which My wife took me here on my birthday My wife took me here on my birthday My wife took me here on my birthday My wife took me here on my birthday My wife took me here on my birthday	557	review	99yKzy9PApeiPPOUJEtnvkg	7	3	0
+hLtl8ZkDX5vH5nAx9C3q5Q	hWKvX83p0-ka4JS3dc6E5A	5	2012-01-26	My wife took me here on my birthday for breakfast and it was excellent.  The weather was perfect which made sitting outside overlooking their grounds an absolute pleasure.My wife took me here on my birthday for breakfast and it was excellent.birthday for breakfast and it was excellent  The weather was perfect which The weather was perfect which The weather was perfect which My wife took me here on my birthday My wife took me here on my birthday My wife took me here on my birthday My wife took me here on my birthday My wife took me here on my birthday	557	review	19yKzy9PApeiPPOUJEtnvkg	7	2	0
+
+
+select * from top_review_funny;
+OK
+eLtl8ZkDX5vH5nAx9C3q5Q	9
+dLtl8ZkDX5vH5nAx9C3q5Q	8
+cLtl8ZkDX5vH5nAx9C3q5Q	7
+gLtl8ZkDX5vH5nAx9C3q5Q	7
+hLtl8ZkDX5vH5nAx9C3q5Q	7
+fLtl8ZkDX5vH5nAx9C3q5Q	5
+pLtl8ZkDX5vH5nAx9C3q5Q	1
+rLtl8ZkDX5vH5nAx9C3q5Q	0
+iLtl8ZkDX5vH5nAx9C3q5Q	0
+aLtl8ZkDX5vH5nAx9C3q5Q	0
+
+select * from top_review_useful;
+OK
+rLtl8ZkDX5vH5nAx9C3q5Q	5
+pLtl8ZkDX5vH5nAx9C3q5Q	5
+aLtl8ZkDX5vH5nAx9C3q5Q	3
+gLtl8ZkDX5vH5nAx9C3q5Q	3
+dLtl8ZkDX5vH5nAx9C3q5Q	2
+hLtl8ZkDX5vH5nAx9C3q5Q	2
+cLtl8ZkDX5vH5nAx9C3q5Q	1
+eLtl8ZkDX5vH5nAx9C3q5Q	1
+fLtl8ZkDX5vH5nAx9C3q5Q	1
+iLtl8ZkDX5vH5nAx9C3q5Q	0
+
+hive> select * from top_review_cool;
+OK
+bLtl8ZkDX5vH5nAx9C3q5Q	5
+eLtl8ZkDX5vH5nAx9C3q5Q	5
+rLtl8ZkDX5vH5nAx9C3q5Q	2
+pLtl8ZkDX5vH5nAx9C3q5Q	2
+fLtl8ZkDX5vH5nAx9C3q5Q	2
+iLtl8ZkDX5vH5nAx9C3q5Q	0
+aLtl8ZkDX5vH5nAx9C3q5Q	0
+cLtl8ZkDX5vH5nAx9C3q5Q	0
+dLtl8ZkDX5vH5nAx9C3q5Q	0
+gLtl8ZkDX5vH5nAx9C3q5Q	0
+
+select * from top_verbose;
+OK
+gLtl8ZkDX5vH5nAx9C3q5Q	557
+hLtl8ZkDX5vH5nAx9C3q5Q	557
+fLtl8ZkDX5vH5nAx9C3q5Q	485
+eLtl8ZkDX5vH5nAx9C3q5Q	449
+aLtl8ZkDX5vH5nAx9C3q5Q	437
+dLtl8ZkDX5vH5nAx9C3q5Q	413
+cLtl8ZkDX5vH5nAx9C3q5Q	377
+bLtl8ZkDX5vH5nAx9C3q5Q	347
+iLtl8ZkDX5vH5nAx9C3q5Q	317
+pLtl8ZkDX5vH5nAx9C3q5Q	243
+																																																																																																																																																						

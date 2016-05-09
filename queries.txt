@@ -1,0 +1,53 @@
+Task 1
+-----------
+
+create table yelp_dataset_raw(data string);
+load data local inpath '/home/vm4learning/Desktop/Yelp_dataset1.json' into table yelp_dataset_raw;
+
+create table yelp_dataset
+row format delimited fields terminated by ','
+stored as sequencefile
+as 
+select
+x.user_id, x.review_id, x.stars, x.dateid, x.text_data, size(split((regexp_replace(x.text_data, ',\n', '')),'')) word_count, x.type, x.business_id,
+get_json_object(votes, '$.funny') as funny,
+get_json_object(votes, '$.useful') as useful,
+get_json_object(votes, '$.cool') as cool 
+from yelp_dataset_raw  lateral view json_tuple(data, 'user_id', 'review_id', 'stars', 'date', 'text', 'type', 'business_id', 'votes') x as user_id, review_id, stars, dateid, text_data, type, business_id, votes;
+
+Task 2
+-----------
+Top 10 users whose reviews were voted funny and stored in sequential file format.
+
+create table top_review_funny
+row format delimited fields terminated by ','
+stored as sequencefile
+as
+select user_id,funny from yelp_dataset sort by funny desc limit 10;
+
+Top 10 users whose reviews were voted useful and stored in sequential file format.
+
+create table top_review_useful
+row format delimited fields terminated by ','
+stored as sequencefile
+as
+select user_id,useful from yelp_dataset sort by useful desc limit 10;
+
+Top 10 users whose reviews were voted cool and stored in sequential file format.
+
+create table top_review_cool
+row format delimited fields terminated by ','
+stored as sequencefile
+as
+select user_id,cool from yelp_dataset sort by cool desc limit 10;
+
+Top 10 users that gave verbose reviews and stored in sequential file format.
+create table top_verbose
+row format delimited fields terminated by ','
+stored as sequencefile
+as
+select user_id,word_count from yelp_dataset sort by word_count desc limit 10;
+
+
+
+
