@@ -21,7 +21,6 @@ JSON_TUPLE
 A new json_tuple() UDTF is introduced in Hive 0.7. It takes a set of names (keys) and a JSON string, and returns a tuple of values using one function. This is much more efficient than calling GET_JSON_OBJECT to retrieve more than one key from a single JSON string. In any case where a single JSON string would be parsed more than once, your query will be more efficient if you parse it once, which is what JSON_TUPLE is for. As JSON_TUPLE is a UDTF, you will need to use the LATERAL VIEW syntax in order to achieve the same goal.
 
 I have used json_tuple to extract the multiple columns at a time along with get_json_object function to extract the other columns like funny, useful, cool, but it will parse the entire json object 3 times for these 3 columns. 
-_____________________________________________________________________________________________________________________________________
 
 Approach 4
 -----------
