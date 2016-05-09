@@ -1,3 +1,7 @@
+Task 1
+--------
+# Explanation : Given data is stored in sequence file format and new word count in text is added.
+
 hive> select * from yelp_dataset;
 OK
 rLtl8ZkDX5vH5nAx9C3q5Q	fWKvX83p0-ka4JS3dc6E5A	5	2011-01-26	My wife took me here on my birthday for breakfast and it was excellent.  The weather was perfect which made sitting outside overlooking their grounds an absolute pleasure.	172	review	9yKzy9PApeiPPOUJEtnvkg	05	2
@@ -12,6 +16,10 @@ fLtl8ZkDX5vH5nAx9C3q5Q	fWKvX83p0-ka4JS3dc6E5A	5	2007-01-26	My wife took me here 
 gLtl8ZkDX5vH5nAx9C3q5Q	gWKvX83p0-ka4JS3dc6E5A	5	2002-01-26	My wife took me here on my birthday for breakfast and it was excellent.  The weather was perfect which made sitting outside overlooking their grounds an absolute pleasure.My wife took me here on my birthday for breakfast and it was excellent.birthday for breakfast and it was excellent  The weather was perfect which The weather was perfect which The weather was perfect which My wife took me here on my birthday My wife took me here on my birthday My wife took me here on my birthday My wife took me here on my birthday My wife took me here on my birthday	557	review	99yKzy9PApeiPPOUJEtnvkg	7	3	0
 hLtl8ZkDX5vH5nAx9C3q5Q	hWKvX83p0-ka4JS3dc6E5A	5	2012-01-26	My wife took me here on my birthday for breakfast and it was excellent.  The weather was perfect which made sitting outside overlooking their grounds an absolute pleasure.My wife took me here on my birthday for breakfast and it was excellent.birthday for breakfast and it was excellent  The weather was perfect which The weather was perfect which The weather was perfect which My wife took me here on my birthday My wife took me here on my birthday My wife took me here on my birthday My wife took me here on my birthday My wife took me here on my birthday	557	review	19yKzy9PApeiPPOUJEtnvkg	7	2	0
 
+Task 2
+--------
+
+# Explanation : Top 10 users whose reviews were voted funny.
 
 select * from top_review_funny;
 OK
@@ -26,6 +34,8 @@ rLtl8ZkDX5vH5nAx9C3q5Q	0
 iLtl8ZkDX5vH5nAx9C3q5Q	0
 aLtl8ZkDX5vH5nAx9C3q5Q	0
 
+# Explanation : Top 10 users whose reviews were voted useful.
+
 select * from top_review_useful;
 OK
 rLtl8ZkDX5vH5nAx9C3q5Q	5
@@ -39,6 +49,8 @@ eLtl8ZkDX5vH5nAx9C3q5Q	1
 fLtl8ZkDX5vH5nAx9C3q5Q	1
 iLtl8ZkDX5vH5nAx9C3q5Q	0
 
+#Explanation : Top 10 users whose reviews were voted cool.
+
 hive> select * from top_review_cool;
 OK
 bLtl8ZkDX5vH5nAx9C3q5Q	5
@@ -51,6 +63,8 @@ aLtl8ZkDX5vH5nAx9C3q5Q	0
 cLtl8ZkDX5vH5nAx9C3q5Q	0
 dLtl8ZkDX5vH5nAx9C3q5Q	0
 gLtl8ZkDX5vH5nAx9C3q5Q	0
+
+#Explanation : Top 10 users whose gave verbose review.
 
 select * from top_verbose;
 OK
