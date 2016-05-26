@@ -49,3 +49,55 @@ row format delimited fields terminated by ','
 stored as sequencefile
 as
 select user_id,word_count from yelp_dataset sort by word_count desc limit 10;
+
+
+
+Queries related to 4 approaches
+-----------------------------------
+
+Approach 1
+---------
+
+select user_id, review_id, stars, dateid, text_data, size(split(text_data, ' ')) word_count, type, business_id, funny, useful, cool from
+(select get_json_object(data, '$.user_id') as user_id,
+get_json_object(data, '$.review_id') as review_id,
+get_json_object(data, '$.stars') as stars,
+get_json_object(data, '$.date') as dateid,
+get_json_object(data, '$.text') as text_data,
+get_json_object(data, '$.type') as type,
+get_json_object(data, '$.business_id') as business_id,
+get_json_object(data, '$.votes.funny') as funny,
+get_json_object(data, '$.votes.useful') as useful,
+get_json_object(data, '$.votes.cool') as cool
+from raw ) aa;
+
+
+Approach 2
+----------
+
+select user_id, review_id, stars, dateid, text_data, size(split(text_data, ' ')) word_count, type, business_id,
+get_json_object(votes, '$.funny') as funny, 
+get_json_object(votes, '$.useful') as useful, 
+get_json_object(votes, '$.cool') as cool
+from (
+select x.* from raw lateral view json_tuple(data, 'user_id', 'review_id', 'stars', 'date', 'text', 'type', 'business_id', 'votes') x as user_id, review_id, stars, dateid, text_data, type, business_id, votes
+) aa;
+
+ 
+Approach 3
+----------
+select x.user_id, x.review_id, x.stars,x.dateid, x.text_data, size(split(x.text_data, ' ')) word_count, x.type, x.business_id,
+get_json_object(votes, '$.funny') as funny,
+get_json_object(votes, '$.useful') as useful,
+get_json_object(votes, '$.cool') as cool 
+from raw lateral view json_tuple(data, 'user_id', 'review_id', 'stars', 'date', 'text', 'type', 'business_id', 'votes') x 
+as user_id, review_id, stars, dateid, text_data, type, business_id, votes;
+
+
+Approach 4
+----------
+select user_id, review_id, stars, dateid, text_data, size(split(text_data, ' ')) word_count, type, business_id, b.* 
+from
+(
+select a.* from raw lateral view json_tuple(data, 'user_id', 'review_id', 'stars', 'date', 'text', 'type', 'business_id', 'votes') a as user_id, review_id, stars, dateid, text_data, type, business_id, votes
+) aa lateral view json_tuple(votes, 'funny', 'useful', 'cool') b as funny, useful, cool;
