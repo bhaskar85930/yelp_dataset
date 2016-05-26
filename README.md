@@ -3,7 +3,8 @@ I have choosen HIVE to work on the given yelp_dataset.
 
 GET_JSON_OBJECT
 ---------------
-Extracts json object from a json string based on json path specified, and returns json string of the extracted json object. It will return null if the input json string is invalid. NOTE: The json path can only have the characters [0-9a-z_], i.e., no upper-case or special characters. Also, the keys *cannot start with numbers.* This is due to restrictions on Hive column names.
+Extracts json object from a json string based on json path specified, and returns json string of the extracted json object. It will return null if the input json string is invalid. 
+NOTE: The json path can only have the characters [0-9a-z_], i.e., no upper-case or special characters. Also, the keys *cannot start with numbers.* This is due to restrictions on Hive column names.
 
 
 JSON_TUPLE
@@ -21,11 +22,11 @@ There are 2 level's in this query. In the first part, i have used json_tuple to 
 
 Approach 3
 -----------
-we have used json_tuple to extract the multiple columns at a time along with get_json_object function to extract the other columns like funny, useful, cool, but it will parse the entire json object 3 times for these 3 columns.
+I have used json_tuple to extract the multiple columns at a time along with get_json_object function to extract the other columns like funny, useful, cool, but it will parse the entire json object 3 times for these 3 columns.
 
 Approach 4
 -----------
-We have used json_tuple function to extract the multiple columns. It will parse only twice to extract all the columns where as other options will parse the json data more than twice. So it is the best option among the four options. 
+I have used json_tuple function to extract the multiple columns. It will parse only twice to extract all the columns where as other options will parse the json data more than twice. So it is the best option among the four options. 
 
 Conclusion
 -----------
@@ -34,9 +35,3 @@ json_tuple(jsonStr, k1, k2, ...)
 
 Takes a set of names (keys) and a JSON string, and returns a tuple of values. 
 This is a more efficient version of the get_json_object UDF because it can get multiple keys with just one call.
-
-
-
-
-
-
