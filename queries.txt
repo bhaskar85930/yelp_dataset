@@ -1,6 +1,5 @@
 Task 1
 -----------
-
 create table yelp_dataset_raw(data string);
 load data local inpath '/home/vm4learning/Desktop/Yelp_dataset1.json' into table yelp_dataset_raw;
 
@@ -72,7 +71,7 @@ get_json_object(data, '$.votes.cool') as cool
 from raw ) aa;
 
 
-Approach 2
+Approach 2 (a)
 ----------
 
 select user_id, review_id, stars, dateid, text_data, size(split(text_data, ' ')) word_count, type, business_id,
@@ -83,8 +82,7 @@ from (
 select x.* from raw lateral view json_tuple(data, 'user_id', 'review_id', 'stars', 'date', 'text', 'type', 'business_id', 'votes') x as user_id, review_id, stars, dateid, text_data, type, business_id, votes
 ) aa;
 
- 
-Approach 3
+Approach 2 (b)
 ----------
 select x.user_id, x.review_id, x.stars,x.dateid, x.text_data, size(split(x.text_data, ' ')) word_count, x.type, x.business_id,
 get_json_object(votes, '$.funny') as funny,
@@ -94,10 +92,31 @@ from raw lateral view json_tuple(data, 'user_id', 'review_id', 'stars', 'date', 
 as user_id, review_id, stars, dateid, text_data, type, business_id, votes;
 
 
-Approach 4
+Approach 3
 ----------
 select user_id, review_id, stars, dateid, text_data, size(split(text_data, ' ')) word_count, type, business_id, b.* 
 from
 (
 select a.* from raw lateral view json_tuple(data, 'user_id', 'review_id', 'stars', 'date', 'text', 'type', 'business_id', 'votes') a as user_id, review_id, stars, dateid, text_data, type, business_id, votes
 ) aa lateral view json_tuple(votes, 'funny', 'useful', 'cool') b as funny, useful, cool;
+
+Approach 4
+----------
+create table yelp_dataset (
+  user_id string,
+  review_id string,
+  stars int,
+  dateid string,
+  text_data string,
+  word_count int,
+  type string,
+  business_id string,
+  votes struct<funny:int, useful:int, cool:int>
+)
+ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerde';
+
+load data local inpath '/home/vm4learning/Desktop/Yelp_dataset_raw.json' into table yelp_dataset;
+
+select user_id, review_id, stars, dateid, text_data, size(split(text_data, ' ')) word_count, type, business_id, votes.funny, 
+votes.useful, votes.cool
+from yelp_dataset_raw
