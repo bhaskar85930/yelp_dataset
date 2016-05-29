@@ -5,7 +5,15 @@ load data local inpath '/home/vm4learning/Desktop/Yelp_dataset1.json' into table
 
 create table yelp_dataset
 row format delimited fields terminated by ','
-stored as sequencefile
+stored as orc 
+-- we can use different file formats, it can be textfile or sequencefile or rcfile or  orcfile or avro or parquet.
+-- If your data is delimited by some parameters then you can use TEXTFILE format.
+-- If your data is in small files whose size is less than the block size then you can use SEQUENCEFILE format.
+-- If you want to perform analytics on your data and you want to store your data efficiently for that then you can use RCFILE format.
+-- If you want to store your data in an optimized way which lessens your storage and increases your performance then you can use ORCFILE format.
+-- Avro is a Row based format. If you want to retrieve the data as a whole you can use Avro
+-- Parquet is a Column based format. If your data consists of lot of columns but you are interested in a subset of columns then you can use Parquet
+
 as 
 select
 x.user_id, x.review_id, x.stars, x.dateid, x.text_data, size(split((regexp_replace(x.text_data, ',\n', '')),'')) word_count, x.type, x.business_id,
@@ -21,7 +29,7 @@ Task 2
 
 create table top_review_funny
 row format delimited fields terminated by ','
-stored as sequencefile
+stored as orc
 as
 select user_id,funny from yelp_dataset sort by funny desc limit 10;
 
@@ -29,7 +37,7 @@ select user_id,funny from yelp_dataset sort by funny desc limit 10;
 
 create table top_review_useful
 row format delimited fields terminated by ','
-stored as sequencefile
+stored as orc
 as
 select user_id,useful from yelp_dataset sort by useful desc limit 10;
 
@@ -37,7 +45,7 @@ select user_id,useful from yelp_dataset sort by useful desc limit 10;
 
 create table top_review_cool
 row format delimited fields terminated by ','
-stored as sequencefile
+stored as orc
 as
 select user_id,cool from yelp_dataset sort by cool desc limit 10;
 
@@ -45,7 +53,7 @@ select user_id,cool from yelp_dataset sort by cool desc limit 10;
 
 create table top_verbose
 row format delimited fields terminated by ','
-stored as sequencefile
+stored as orc
 as
 select user_id,word_count from yelp_dataset sort by word_count desc limit 10;
 
