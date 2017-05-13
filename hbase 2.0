@@ -1,0 +1,306 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.hadoop.hbase.mapreduce;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.InetSocketAddress;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.UUID;
+import java.util.HashMap;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.hbase.classification.InterfaceAudience;
+import org.apache.hadoop.hbase.classification.InterfaceStability;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.CellComparator;
+import org.apache.hadoop.hbase.CellUtil;
+import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.hbase.HConstants;
+import org.apache.hadoop.hbase.HRegionLocation;
+import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.KeyValueUtil;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.fs.HFileSystem;
+import org.apache.hadoop.hbase.client.RegionLocator;
+import org.apache.hadoop.hbase.client.Table;
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.io.compress.Compression;
+import org.apache.hadoop.hbase.io.compress.Compression.Algorithm;
+import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
+import org.apache.hadoop.hbase.io.hfile.HFileWriterImpl;
+import org.apache.hadoop.hbase.io.hfile.CacheConfig;
+import org.apache.hadoop.hbase.io.hfile.HFile;
+import org.apache.hadoop.hbase.io.hfile.HFileContext;
+import org.apache.hadoop.hbase.io.hfile.HFileContextBuilder;
+import org.apache.hadoop.hbase.regionserver.BloomType;
+import org.apache.hadoop.hbase.regionserver.HStore;
+import org.apache.hadoop.hbase.regionserver.StoreFile;
+import org.apache.hadoop.hbase.regionserver.StoreFileWriter;
+import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.OutputFormat;
+import org.apache.hadoop.mapreduce.RecordWriter;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.partition.TotalOrderPartitioner;
+
+import com.google.common.annotations.VisibleForTesting;
+
+/**
+ * Writes HFiles. Passed Cells must arrive in order.
+ * Writes current time as the sequence id for the file.
+ * Creates 2 level tree directory, first level is using table name as parent directory and
+ * then use family name as child directory
+ * Sets the major compacted attribute on created @{link {@link HFile}s.
+ * Calling write(null,null) will forcibly roll all HFiles being written.
+ * <p>
+ */
+@InterfaceAudience.Public
+@InterfaceStability.Evolving
+public class MultiHFileOutputFormat
+    extends FileOutputFormat<ImmutableBytesWritable, Cell> {
+  private static final Log LOG = LogFactory.getLog(MultiHFileOutputFormat.class);
+
+  /*
+   * Data structure to hold a Writer and amount of data written on it.
+   */
+  static class WriterLength {
+    long written = 0;
+    StoreFileWriter writer = null;
+  }
+
+  @Override
+  public RecordWriter<ImmutableBytesWritable, Cell> getRecordWriter(
+      final TaskAttemptContext context) throws IOException, InterruptedException {
+    return createRecordWriter(context);
+  }
+
+  static <V extends Cell> RecordWriter<ImmutableBytesWritable, V>
+      createRecordWriter(final TaskAttemptContext context)
+          throws IOException {
+
+    // Get the path of the output directory
+    final Path outputPath = FileOutputFormat.getOutputPath(context);
+    final Path outputdir = new FileOutputCommitter(outputPath, context).getWorkPath();
+    final Configuration conf = context.getConfiguration();
+    final FileSystem fs = outputdir.getFileSystem(conf);
+    // These configs. are from hbase-*.xml
+    final long maxsize = conf.getLong(HConstants.HREGION_MAX_FILESIZE,
+        HConstants.DEFAULT_MAX_FILE_SIZE);
+    // Invented config.  Add to hbase-*.xml if other than default compression.
+    final String defaultCompressionStr = conf.get("hfile.compression",
+        Algorithm.NONE.getName());
+    final Algorithm defaultCompression = HFileWriterImpl
+        .compressionByName(defaultCompressionStr);
+    final boolean compactionExclude = conf.getBoolean(
+            "hbase.mapreduce.hfileoutputformat.compaction.exclude", false);
+
+    // Map of tables to writers
+    final Map<ImmutableBytesWritable, RecordWriter<ImmutableBytesWritable, V>> tableWriters =
+        new HashMap<ImmutableBytesWritable, RecordWriter<ImmutableBytesWritable, V>>();
+
+    return new RecordWriter<ImmutableBytesWritable, V>() {
+      @Override
+      public void write(ImmutableBytesWritable tableName, V cell) throws IOException, InterruptedException {
+        RecordWriter<ImmutableBytesWritable, V> tableWriter = tableWriters.get(tableName);
+        // if there is new table, verify that table directory exists
+    if (tableWriter == null) {
+      //using table name as directory name
+      final Path tableOutputdir = new Path(outputdir, Bytes.toString(tableName.copyBytes()));
+        fs.mkdirs(tableOutputdir);
+
+        tableWriter = new RecordWriter<ImmutableBytesWritable, V>() {
+            // Map of families to writers and how much has been output on the writer.
+            private final Map<byte [], WriterLength> writers =
+              new TreeMap<byte [], WriterLength>(Bytes.BYTES_COMPARATOR);
+            private byte [] previousRow = HConstants.EMPTY_BYTE_ARRAY;
+            private final byte [] now = Bytes.toBytes(System.currentTimeMillis());
+            private boolean rollRequested = false;
+
+            @Override
+            public void write(ImmutableBytesWritable row, V cell)
+                throws IOException {
+              KeyValue kv = KeyValueUtil.ensureKeyValue(cell);
+
+              // null input == user explicitly wants to flush
+              if (row == null && kv == null) {
+                rollWriters();
+                return;
+              }
+
+              byte [] rowKey = CellUtil.cloneRow(kv);
+              long length = kv.getLength();
+              byte [] family = CellUtil.cloneFamily(kv);
+              WriterLength wl = this.writers.get(family);
+
+              // If this is a new column family, verify that the directory for column exists
+              if (wl == null) {
+                FileSystem tfs = tableOutputdir.getFileSystem(conf);
+                tfs.mkdirs(new Path(tableOutputdir, Bytes.toString(family)));
+              }
+
+              // If any of the HFiles for the column families has reached
+              // maxsize, we need to roll all the writers
+              if (wl != null && wl.written + length >= maxsize) {
+                this.rollRequested = true;
+              }
+
+              // This can only happen once a row is finished though
+              if (rollRequested && Bytes.compareTo(this.previousRow, rowKey) != 0) {
+                rollWriters();
+              }
+
+              // create a new writer, if necessary
+              if (wl == null || wl.writer == null) {
+                  wl = getNewWriter(family, conf, null);
+              }
+
+              // we now have the proper writer. full steam ahead
+              kv.updateLatestStamp(this.now);
+              wl.writer.append(kv);
+              wl.written += length;
+
+              // Copy the row so we know when a row transition.
+              this.previousRow = rowKey;
+            }
+
+            /* Roll storefile writer, flush and close storefile writer
+             * @throws IOException
+             */
+            private void rollWriters() throws IOException {
+              for (WriterLength wl : this.writers.values()) {
+                if (wl.writer != null) {
+                  LOG.info("Writer=" + wl.writer.getPath() +
+                      ((wl.written == 0)? "": ", wrote=" + wl.written));
+                  close_sf_writer(wl.writer);
+                }
+                wl.writer = null;
+                wl.written = 0;
+              }
+              this.rollRequested = false;
+            }
+
+            /* Create a new StoreFile.Writer.
+             * @param family
+             * @return A WriterLength, containing a new StoreFile.Writer.
+             * @throws IOException
+             */
+            @edu.umd.cs.findbugs.annotations.SuppressWarnings(value="BX_UNBOXING_IMMEDIATELY_REBOXED",
+                justification="Not important")
+            private WriterLength getNewWriter(byte[] family, Configuration conf,
+                InetSocketAddress[] favoredNodes) throws IOException {
+              WriterLength wl = new WriterLength();
+              Path familydir = new Path(tableOutputdir, Bytes.toString(family));
+              Algorithm compression = defaultCompression;
+              BloomType bloomType = BloomType.NONE;
+              Integer blockSize = HConstants.DEFAULT_BLOCKSIZE;
+
+              Configuration tempConf = new Configuration(conf);
+              tempConf.setFloat(HConstants.HFILE_BLOCK_CACHE_SIZE_KEY, 0.0f);
+              HFileContextBuilder contextBuilder = new HFileContextBuilder()
+                                          .withCompression(compression)
+                                          .withChecksumType(HStore.getChecksumType(conf))
+                                          .withBytesPerCheckSum(HStore.getBytesPerChecksum(conf))
+                                          .withBlockSize(blockSize);
+
+              if (HFile.getFormatVersion(conf) >= HFile.MIN_FORMAT_VERSION_WITH_TAGS) {
+                contextBuilder.withIncludesTags(true);
+              }
+
+              HFileContext hFileContext = contextBuilder.build();
+
+              if (null == favoredNodes) {
+                wl.writer =
+                    new StoreFileWriter.Builder(conf, new CacheConfig(tempConf), fs)
+                        .withOutputDir(familydir).withBloomType(bloomType)
+                        .withComparator(CellComparator.COMPARATOR).withFileContext(hFileContext).build();
+              } else {
+                wl.writer =
+                    new StoreFileWriter.Builder(conf, new CacheConfig(tempConf), new HFileSystem(fs))
+                        .withOutputDir(familydir).withBloomType(bloomType)
+                        .withComparator(CellComparator.COMPARATOR).withFileContext(hFileContext)
+                        .withFavoredNodes(favoredNodes).build();
+              }
+
+              this.writers.put(family, wl);
+              return wl;
+            }
+
+            /*
+            * Flush and close StoreFile writer
+            * @param w
+            * @throws IOException
+            */
+            private void close_sf_writer(final StoreFileWriter w) throws IOException {
+              if (w != null) {
+                w.appendFileInfo(StoreFile.BULKLOAD_TIME_KEY,
+                    Bytes.toBytes(System.currentTimeMillis()));
+                w.appendFileInfo(StoreFile.BULKLOAD_TASK_KEY,
+                    Bytes.toBytes(context.getTaskAttemptID().toString()));
+                w.appendFileInfo(StoreFile.MAJOR_COMPACTION_KEY,
+                    Bytes.toBytes(true));
+                w.appendFileInfo(StoreFile.EXCLUDE_FROM_MINOR_COMPACTION_KEY,
+                        Bytes.toBytes(compactionExclude));
+                w.appendTrackedTimestampsToMetadata();
+                w.close();
+              }
+            }
+
+            @Override
+            public void close(TaskAttemptContext c)
+            throws IOException, InterruptedException {
+              for (WriterLength wl: this.writers.values()) {
+                close_sf_writer(wl.writer);
+              }
+            }
+        };
+        // Put table into map
+        tableWriters.put(tableName, tableWriter);
+      }
+      // Write <TableName, Cell> into tableWriter
+      tableWriter.write(new ImmutableBytesWritable(CellUtil.cloneRow(cell)), cell);
+    }
+
+    @Override
+    public void close(TaskAttemptContext c) throws IOException, InterruptedException {
+        for (RecordWriter<ImmutableBytesWritable, V> writer : tableWriters.values()) {
+        writer.close(c);
+    }
+      }
+    };
+  }
