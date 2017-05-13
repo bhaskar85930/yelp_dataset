@@ -1,0 +1,25 @@
+code555_sample.txt 
+------------------
+ 
+Anil:lion
+scott:tiger
+
+export HADOOP_CLASSPATH=$HBASE_HOME/lib/hbase-client-1.1.1-mapr-1602.jar
+export HADOOP_CLASSPATH=$HBASE_HOME/lib/hbase-common-1.1.1-mapr-1602.jar
+export HADOOP_CLASSPATH=$HBASE_HOME/lib/hbase-protocol-1.1.1-mapr-1602.jar
+export HADOOP_CLASSPATH=$HBASE_HOME/lib/zookeeper-3.4.5-mapr-1406.jar
+export HADOOP_CLASSPATH=$HBASE_HOME/lib/guava-12.0.1.jar
+HADOOP_CLASSPATH=`hbase classpath`:`yarn classpath`
+export HADOOP_CLASSPATH=${JAVA_HOME}/lib/tools.jar
+
+
+hadoop jar code555.jar com.aexp.hbase.withoutbulkload.HbaseMultiTableBulkInsert code555_sample.txt  hbase-test
+
+
+
+hbase shell
+
+create 'TableA','cf1'
+create 'TableB','cf1'
+scan 'TableA'
+scan 'TableB'
