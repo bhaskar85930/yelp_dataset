@@ -1,0 +1,34 @@
+package com.lxmt.multiinsert;
+
+import java.io.IOException;
+import java.util.Iterator;
+
+import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
+
+public class BulkLoadReducer extends Reducer<ImmutableBytesWritable, KeyValue, ImmutableBytesWritable, KeyValue> {
+
+	MultipleOutputs  mos ;
+	@Override
+	protected void setup(Context context) throws IOException ,InterruptedException {
+		mos=new MultipleOutputs(context);
+	}
+	@Override
+	protected void reduce(ImmutableBytesWritable key, java.lang.Iterable<KeyValue> values, Context context)
+			throws IOException, InterruptedException {
+		if (Bytes.toString(key.get()).equals("Table1")) {
+			for (KeyValue val : values) {
+				mos.write(key,val,"output1");
+			}
+		} else {
+			for (KeyValue val : values) {
+				mos.write(key, val,"output2");
+			}
+		}
+
+	}
+
+}
