@@ -1,0 +1,82 @@
+package com.azurro.hbase.bulkinsert;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles;
+import org.apache.hadoop.hbase.mapreduce.MultiTableHFileOutputFormat;
+import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.util.ToolRunner;
+
+public class App extends Configured implements Tool {
+    private static final List<String> TABLES = Arrays.asList("emp", "emp2", "emp3");
+
+    static class ExampleMapper extends Mapper<LongWritable, Text, ImmutableBytesWritable, KeyValue> {
+
+        protected final ImmutableBytesWritable ibw = new ImmutableBytesWritable();
+
+        @Override
+        public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+
+            for (String name : TABLES) {
+                // The schema can take data and make a row key for it's table
+                String row = key.toString();
+                String table = name;
+                byte[] keyBytes = MultiTableHFileOutputFormat.makeKey(table, row);
+                ibw.set(keyBytes);
+
+                // Magic function
+                KeyValue kv = new KeyValue(keyBytes, Bytes.toBytes("personal data"), Bytes.toBytes("city"), Bytes.toBytes(value.toString()));
+                context.write(ibw, kv);
+            }
+        }
+    }
+
+    public int run(String[] args) throws Exception {
+        Configuration conf = getConf();
+
+        Job job = Job.getInstance(conf, App.class.getSimpleName());
+        job.setJarByClass(App.class);
+        job.setMapperClass(ExampleMapper.class);
+        job.setMapOutputKeyClass(ImmutableBytesWritable.class);
+        job.setMapOutputValueClass(KeyValue.class);
+
+        FileInputFormat.setInputPaths(job, new Path("/user/piotrek/input.csv"));
+        FileOutputFormat.setOutputPath(job, new Path("/user/piotrek/hfiles"));
+
+        // Make HTables for each output table
+        HTable[] hTables = new HTable[TABLES.size()];
+        for (int i = 0; i < TABLES.size(); i++) {
+            hTables[i] = new HTable(conf, Bytes.toBytes(TABLES.get(i)));
+        }
+        // Configure the load for all the tables
+        MultiTableHFileOutputFormat.configureIncrementalLoad(job, hTables);
+        job.waitForCompletion(true);
+        for (int i = 0; i < hTables.length; i++) {
+            LoadIncrementalHFiles loader = new LoadIncrementalHFiles(conf);
+
+            loader.doBulkLoad(new Path("/user/piotrek/hfiles/" + hTables[i].getName().toString()), hTables[i]);
+        }
+        return 1;
+
+    }
+
+    public static void main(String[] args) throws Exception {
+        ToolRunner.run(HBaseConfiguration.create(), new App(), args);
+    }
+}
