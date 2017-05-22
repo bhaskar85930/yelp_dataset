@@ -1,0 +1,17 @@
+create 'emp', 'personal data', 'professional data'
+ create 'emp2', 'personal data', 'professional data'
+ create 'emp3', 'personal data', 'professional data'
+If you have different table names, change line 27 in 
+com.azurro.hbase.bulkinsert.App.java file.
+
+2. Copy the sample file (keys.sort.txt) into HDFS. 
+
+3. Edit the input and output paths in 
+com.azurro.hbase.bulkinsert.App.java, lines 59 and 60.
+
+4. Compile the code with:
+mvn clean install
+
+RUN JOB COMMAND:
+
+hadoop jar target/bulk-insert-0.0.1-SNAPSHOT-jar-with-dependencies.jar com.azurro.hbase.bulkinsert.App
